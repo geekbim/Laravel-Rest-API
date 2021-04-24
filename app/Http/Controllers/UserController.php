@@ -63,19 +63,35 @@ class UserController extends Controller
 
     public function logout()
     {
-        JWTAuth::invalidate(JWTAuth::getToken());
+        try {
+            JWTAuth::invalidate(JWTAuth::getToken());
 
-        return response()->json([
-            'message' => 'User successfully sign out'
-        ]);
+            return response()->json([
+                'message' => 'User successfully sign out'
+            ]);
+        } catch (TokenExpiredException $e) {
+            return response()->json(['message' => 'Token expired'], 400);
+        } catch (TokenInvalidException $e) {
+            return response()->json(['message' => 'Token invalid'], 400);
+        } catch (JWTException $e) {
+            return response()->json(['message' => 'Not authorized'], 400);
+        }
     }
 
     public function refresh()
     {
-        $user = JWTAuth::parseToken()->authenticate();
-        $token = JWTAuth::refresh($user);
-        
-        return $this->createNewToken($token);
+        try {
+            $user = JWTAuth::parseToken()->authenticate();
+            $token = JWTAuth::refresh($user);
+    
+            return $this->createNewToken($token);
+        } catch (TokenExpiredException $e) {
+            return response()->json(['message' => 'Token expired'], 400);
+        } catch (TokenInvalidException $e) {
+            return response()->json(['message' => 'Token invalid'], 400);
+        } catch (JWTException $e) {
+            return response()->json(['message' => 'Not authorized'], 400);
+        }
     }
 
     public function getAuthenticatedUser()
@@ -85,11 +101,11 @@ class UserController extends Controller
                 return response()->json(['User not found'], 404);
             }
         } catch (TokenExpiredException $e) {
-            return response()->json(['message' => 'Token iexpired'], 400);
+            return response()->json(['message' => 'Token expired'], 400);
         } catch (TokenInvalidException $e) {
-            return response()->json(['message' => 'Token Invalid'], 400);
+            return response()->json(['message' => 'Token invalid'], 400);
         } catch (JWTException $e) {
-            return response()->json(['message' => 'Token absent'], 400);
+            return response()->json(['message' => 'Not authorized'], 400);
         }
 
         return response()->json(compact('user'));
