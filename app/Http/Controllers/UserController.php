@@ -20,13 +20,31 @@ class UserController extends Controller
 
         try {
             if (! $token = JWTAuth::attempt($credentials)) {
-                return response()->json(['error' => 'Invalid credentials'], 300);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid credentials',
+                    'data'    => null
+                ], 300);
             }
         } catch (JWTException $e) {
-            return response()->json(['error' => 'Could not create token'], 500);
+            return response()->json([
+                'success'   => false,
+                'message'   => 'Could not create token',
+                'data'      => null
+            ], 500);
         }
 
-        return response()->json(compact('token'));
+        $user = Auth::user();
+
+        // return response()->json(compact('token'));
+        return response()->json([
+            'success' => true,
+            'messsage' => 'User login successfully',
+            'data' => [
+                'user' => $user,
+                'token' => $token
+            ]
+            ], 201);
     }
 
     public function register(Request $request)
@@ -44,7 +62,11 @@ class UserController extends Controller
         );
 
         if ($validator->fails()) {
-            return response()->json($validator->errors(), 400);
+            return response()->json([
+                'success'   => false,
+                'message'   => $validator->errors(),
+                'data'      => null
+            ], 400);
         }
 
         $user = User::create([
@@ -58,7 +80,15 @@ class UserController extends Controller
 
         $token = JWTAuth::fromUser($user);
 
-        return response()->json(compact('user', 'token'), 201);
+        // return response()->json(compact('user', 'token'), 201);
+        return response()->json([
+            'success'   => true,
+            'message'   => 'User registered successfully',
+            'data'      => [
+                'user'  => $user,
+                'token' => $token
+            ]
+        ], 201);
     }
 
     public function logout()
@@ -67,14 +97,28 @@ class UserController extends Controller
             JWTAuth::invalidate(JWTAuth::getToken());
 
             return response()->json([
-                'message' => 'User successfully sign out'
-            ]);
+                'success' => true,
+                'message' => 'User successfully sign out',
+                'data'    => null
+            ], 201);
         } catch (TokenExpiredException $e) {
-            return response()->json(['message' => 'Token expired'], 400);
+            return response()->json([
+                'success' => false,
+                'message' => 'Token expired',
+                'data'    => null
+            ], 400);
         } catch (TokenInvalidException $e) {
-            return response()->json(['message' => 'Token invalid'], 400);
+            return response()->json([
+                'success' => false,
+                'message' => 'Token invalid',
+                'data'    => null
+            ], 400);
         } catch (JWTException $e) {
-            return response()->json(['message' => 'Not authorized'], 400);
+            return response()->json([
+                'success' => false,
+                'message' => 'Token absent',
+                'data'    => null
+            ], 400);
         }
     }
 
@@ -86,11 +130,23 @@ class UserController extends Controller
     
             return $this->createNewToken($token);
         } catch (TokenExpiredException $e) {
-            return response()->json(['message' => 'Token expired'], 400);
+            return response()->json([
+                'success' => false,
+                'message' => 'Token expired',
+                'data'    => null
+            ], 400);
         } catch (TokenInvalidException $e) {
-            return response()->json(['message' => 'Token invalid'], 400);
+            return response()->json([
+                'success' => false,
+                'message' => 'Token invalid',
+                'data'    => null
+            ], 400);
         } catch (JWTException $e) {
-            return response()->json(['message' => 'Not authorized'], 400);
+            return response()->json([
+                'success' => false,
+                'message' => 'Token absent',
+                'data'    => null
+            ], 400);
         }
     }
 
@@ -98,26 +154,50 @@ class UserController extends Controller
     {
         try {
             if (! $user = JWTAuth::parseToken()->authenticate()) {
-                return response()->json(['User not found'], 404);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not found',
+                    'data'    => null
+                ], 404);
             }
         } catch (TokenExpiredException $e) {
-            return response()->json(['message' => 'Token expired'], 400);
+            return response()->json([
+                'success' => false,
+                'message' => 'Token expired',
+                'data'    => null
+            ], 400);
         } catch (TokenInvalidException $e) {
-            return response()->json(['message' => 'Token invalid'], 400);
+            return response()->json([
+                'success' => false,
+                'message' => 'Token invalid',
+                'data'    => null
+            ], 400);
         } catch (JWTException $e) {
-            return response()->json(['message' => 'Not authorized'], 400);
+            return response()->json([
+                'success' => false,
+                'message' => 'Token absent',
+                'data'    => null
+            ], 400);
         }
 
-        return response()->json(compact('user'));
+        return response()->json([
+            'success' => true,
+            'message' => 'Get user successfully',
+            'data'    => $user
+        ], 201);
     }
 
     protected function createNewToken($token)
     {
         return response()->json([
-            'access_token' => $token,
-            'token_type' => 'bearer', 
-            'expires_in' => JWTAuth::factory()->getTTL() * 60,
-            'user' => Auth::user()
-        ]);
+            'success'   => true,
+            'message'   => 'Generate new token successfully',
+            'data'      => [
+                'access_token' => $token,
+                'token_type' => 'bearer', 
+                'expires_in' => JWTAuth::factory()->getTTL() * 60,
+                'user' => Auth::user()
+            ]
+        ], 201);
     }
 }
